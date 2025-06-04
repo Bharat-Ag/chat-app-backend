@@ -41,7 +41,7 @@ const corsOptions = {
     origin: process.env.FRONTEND_URL,
     credentials: true, // Allow cookies or auth headers
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization", "token"], // 👈 ADD 'token' here
 };
 
 app.use(cors(corsOptions));
