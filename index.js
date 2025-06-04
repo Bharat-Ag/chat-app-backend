@@ -44,9 +44,8 @@ const corsOptions = {
 }
 
 app.use(cors(corsOptions));
-
-app.use("/", (res, req) => {
-    res.send("Backend working")
+app.get("/", (req, res) => {
+    res.send("Backend working");
 });
 app.use("/api/auth", userRouter);
 app.use("/api/messages", msgRoute);
