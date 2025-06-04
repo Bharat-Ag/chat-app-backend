@@ -32,7 +32,23 @@ io.on('connection', (socket) => {
         delete userSocketMap[userId]
         io.emit('getOnlineUsers', Object.keys(userSocketMap));
     })
+    // Typing indicator handling
+    socket.on('typing', ({ senderId, receiverId }) => {
+        const receiverSocketId = userSocketMap[receiverId];
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('typing', { senderId });
+        }
+    });
+
+    socket.on('stopTyping', ({ senderId, receiverId }) => {
+        const receiverSocketId = userSocketMap[receiverId];
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('stopTyping', { senderId });
+        }
+    });
+
 })
+
 
 //Middleware
 app.use(express.json({ limit: "4mb" }))

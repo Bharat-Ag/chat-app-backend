@@ -1,6 +1,6 @@
 import express from "express"
 import { protectRoute } from "../middleware/auth.js";
-import { clearMessagesImmediately, clearMessagesOlderThan24Hours, deleteMessage, getLastMessagesForSidebar, getMessage, getUserForSidebar, markMsgSeen, sendMessage } from "../controllers/messageController.js";
+import { clearAllMessagesOnLogout, clearMessagesImmediately, clearMessagesOlderThan24Hours, deleteMessage, getLastMessagesForSidebar, getMessage, getUserForSidebar, markMsgSeen, sendMessage } from "../controllers/messageController.js";
 import { getDeleteChatRule, setDeleteChatRule } from "../controllers/chatRuleController.js";
 
 const msgRoute = express.Router()
@@ -17,6 +17,8 @@ msgRoute.delete("/clear-24hours", protectRoute, clearMessagesOlderThan24Hours)
 
 msgRoute.post("/chat-rule/:withUserId", protectRoute, setDeleteChatRule);
 msgRoute.get("/chat-rule/:withUserId", protectRoute, getDeleteChatRule);
+msgRoute.delete("/clear-all-on-logout", protectRoute, clearAllMessagesOnLogout);
+
 
 
 
