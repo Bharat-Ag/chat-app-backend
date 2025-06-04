@@ -43,11 +43,6 @@ const corsOptions = {
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"]
 };
-const corsOptions = {
-    origin: process.env.FRONTEND_URL,
-    methods: ["GET", "PUT", "DELETE", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-}
 
 app.use(cors(corsOptions));
 app.get("/", (req, res) => {
