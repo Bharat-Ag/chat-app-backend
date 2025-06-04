@@ -6,7 +6,7 @@ import { connectDb } from "./lib/db.js"
 import userRouter from "./routes/userRoutes.js"
 import msgRoute from "./routes/messageRoutes.js"
 import { Server } from "socket.io"
-const allowedOrigins = ['https://chat-app-frontend-mauve-tau.vercel.app/'];
+const allowedOrigins = ['https://chat-app-frontend-mauve-tau.vercel.app'];
 
 const app = express()
 const server = http.createServer(app)
