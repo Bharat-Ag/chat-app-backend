@@ -6,7 +6,7 @@ import { connectDb } from "./lib/db.js"
 import userRouter from "./routes/userRoutes.js"
 import msgRoute from "./routes/messageRoutes.js"
 import { Server } from "socket.io"
-const allowedOrigins = ['https://chat-app-frontend-mauve-tau.vercel.app'];
+
 
 const app = express()
 const server = http.createServer(app)
@@ -36,7 +36,13 @@ io.on('connection', (socket) => {
 
 //Middleware
 app.use(express.json({ limit: "4mb" }))
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+
+const corsOptions = {
+    origin: process.env.FRONTEND_URL,
+    method: ["GET", "PUT", "DELETE", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}
+app.use(cors(corsOptions));
 
 app.use("/api/auth", userRouter);
 app.use("/api/messages", msgRoute);
