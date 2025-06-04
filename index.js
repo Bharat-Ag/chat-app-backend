@@ -39,9 +39,10 @@ app.use(express.json({ limit: "4mb" }))
 
 const corsOptions = {
     origin: process.env.FRONTEND_URL,
-    method: ["GET", "PUT", "DELETE", "POST"],
+    methods: ["GET", "PUT", "DELETE", "POST"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }
+
 app.use(cors(corsOptions));
 
 app.use("/api/auth", userRouter);
