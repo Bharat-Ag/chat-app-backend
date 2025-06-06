@@ -36,13 +36,16 @@ export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
         const userData = await User.findOne({ email })
+        if (!userData) {
+            return res.json({ success: false, message: "Gadhe ki ga#d register toh krle pehle ya email check kar" });
+        }
         const isPass = await bcrypt.compare(password, userData.password)
         if (!isPass) {
-            return res.json({ success: false, message: "Invalid Credentails" });
+            return res.json({ success: false, message: "Papa se puch password bhul gya toh" });
         }
 
         const token = generateToken(userData._id)
-        return res.json({ success: true, userData, token, message: "Login successful" });
+        return res.json({ success: true, userData, token, message: "Aa gya dalla baat krne" });
 
     } catch (error) {
         console.log('error', error.message)
@@ -112,3 +115,22 @@ export const onlineVisibility = async (req, res) => {
         return res.json({ success: false, message: error.message });
     }
 }
+
+// export const saveFcmToken = async (req, res) => {
+//     try {
+//         const userId = req.user._id;
+//         const { fcmToken } = req.body;
+
+//         if (!fcmToken) return res.status(400).json({ success: false, message: "FCM token is required" });
+
+//         await User.findOneAndUpdate(
+//             { userId },
+//             { fcmToken },
+//             { new: true }
+//         );
+//         res.json({ success: true, message: "Token saved successfully" });
+//     } catch (err) {
+//         console.error("Save FCM token error:", err.message);
+//         res.status(500).json({ success: false, message: err.message });
+//     }
+// };

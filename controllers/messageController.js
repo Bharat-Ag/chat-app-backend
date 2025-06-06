@@ -1,8 +1,11 @@
-import mongoose from "mongoose";
 import cloudinary from "../lib/cloudinary.js";
 import Message from "../models/MessageModel.js";
 import User from "../models/UserModel.js";
 import { io, userSocketMap } from "../index.js";
+// import fetch from "node-fetch";
+import sanitizeHtml from "sanitize-html"; // make sure this is installed
+
+
 
 export const getUserForSidebar = async (req, res) => {
     try {
@@ -61,35 +64,81 @@ export const markMsgSeen = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
     try {
-
         const { text, image } = req.body;
-        const recieverId = req.params.id
+        const recieverId = req.params.id;
         const senderId = req.user._id;
+
+        if (!text && !image) {
+            return res.status(400).json({ success: false, message: "Message content is required." });
+        }
+
         let imgUrl;
+
+        // Upload image if present
         if (image) {
-            const uploadRes = await cloudinary.uploader.upload(image)
+            const uploadRes = await cloudinary.uploader.upload(image);
             imgUrl = uploadRes.secure_url;
         }
 
+        // Sanitize and clean up text
+        let safeText = '';
+        if (text) {
+            // Step 1: Sanitize text
+            safeText = sanitizeHtml(text, {
+                allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'span']),
+                allowedAttributes: {
+                    ...sanitizeHtml.defaults.allowedAttributes,
+                    img: ['src', 'alt'],
+                    span: ['style'],
+                },
+                allowedStyles: {
+                    '*': {
+                        'color': [/^.*$/],
+                        'background-color': [/^.*$/],
+                        'font-size': [/^.*$/],
+                        'text-align': [/^.*$/],
+                    },
+                },
+            });
+
+            // Step 2: Remove <img> tags from text if image is handled separately
+            if (imgUrl) {
+                safeText = safeText.replace(/<img[^>]*>/g, '').trim();
+            }
+        }
+
+        // Create message
         const newMsg = await Message.create({
             senderId,
             recieverId,
-            text,
-            image: imgUrl
-        })
+            text: safeText || undefined,
+            image: imgUrl || undefined
+        });
 
-        const recieverScketId = userSocketMap[recieverId]
+        // Emit socket or push notification
+        const recieverScketId = userSocketMap[recieverId];
+
         if (recieverScketId) {
-            io.to(recieverScketId).emit('newMessage', newMsg)
+            io.to(recieverScketId).emit('newMessage', newMsg);
+        } else {
+            const reciever = await User.findById(recieverId);
+            if (reciever?.fcmToken) {
+                await sendPushNotification({
+                    token: reciever.fcmToken,
+                    title: "New Message",
+                    body: safeText ? sanitizeHtml(safeText, { allowedTags: [], allowedAttributes: {} }).slice(0, 50) : "📷 Photo Message"
+                });
+            }
         }
 
         return res.json({ success: true, newMessage: newMsg });
 
     } catch (error) {
-        // console.log('error', error.message)
-        return res.json({ success: false, message: error.message });
+        console.error('sendMessage error:', error.message);
+        return res.status(500).json({ success: false, message: error.message });
     }
-}
+};
+
 
 export const clearMessagesImmediately = async (req, res) => {
     try {
@@ -243,3 +292,32 @@ export const deleteMessage = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// const FCM_SERVER_KEY = "ec0ba497febdd788b227b96eb1ce18eda1cb3639"
+
+// export const sendPushNotification = async ({ token, title, body }) => {
+//     try {
+//         const response = await fetch("https://fcm.googleapis.com/fcm/send", {
+//             method: "POST",
+//             headers: {
+//                 "Authorization": `key=${FCM_SERVER_KEY}`,
+//                 "Content-Type": "application/json",
+//             },
+//             body: JSON.stringify({
+//                 to: token,
+//                 notification: {
+//                     title: title,
+//                     body: body,
+//                     sound: "default"
+//                 },
+//                 priority: "high"
+//             }),
+//         });
+
+//         const result = await response.json();
+//         console.log("FCM push response:", result);
+//         return result;
+//     } catch (error) {
+//         console.error("Push notification error:", error.message);
+//     }
+// };

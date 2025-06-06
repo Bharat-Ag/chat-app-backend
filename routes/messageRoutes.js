@@ -10,6 +10,7 @@ msgRoute.get("/last-messages", protectRoute, getLastMessagesForSidebar)
 msgRoute.get("/:id", protectRoute, getMessage)
 msgRoute.put("/mark/:id", protectRoute, markMsgSeen)
 msgRoute.post("/send/:id", protectRoute, sendMessage)
+// msgRoute.post("/send-notification", protectRoute, sendPushNotification)
 msgRoute.delete("/delete/:messageId", protectRoute, deleteMessage);
 msgRoute.delete("/clear-immediate", protectRoute, clearMessagesImmediately)
 msgRoute.delete("/clear-24hours", protectRoute, clearMessagesOlderThan24Hours)
