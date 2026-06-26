@@ -7,7 +7,7 @@ const userScheme = new mongoose.Schema({
     profilePic: { type: String, default: "" },
     bio: { type: String },
     isOnlineVisible: { type: Boolean, default: false, },
-    // fcmToken: { type: String, }
+    fcmToken: { type: String, default: "" },
 }, { timestamps: true })
 
 const User = mongoose.model("User", userScheme)

@@ -2,7 +2,7 @@ import cloudinary from "../lib/cloudinary.js";
 import Message from "../models/MessageModel.js";
 import User from "../models/UserModel.js";
 import { io, userSocketMap } from "../index.js";
-// import fetch from "node-fetch";
+import { messaging } from "../auth/firebaseAdmin.js";
 import sanitizeHtml from "sanitize-html"; // make sure this is installed
 
 
@@ -119,14 +119,22 @@ export const sendMessage = async (req, res) => {
         const recieverScketId = userSocketMap[recieverId];
 
         if (recieverScketId) {
+            // Receiver has the app open (socket alive) — deliver in real time.
+            // The client decides whether to show an in-app notification based on
+            // which chat is open / whether the tab is focused.
             io.to(recieverScketId).emit('newMessage', newMsg);
         } else {
+            // Receiver is fully offline (no socket) — fall back to an FCM push so
+            // their service worker can show a system notification.
             const reciever = await User.findById(recieverId);
             if (reciever?.fcmToken) {
                 await sendPushNotification({
                     token: reciever.fcmToken,
-                    title: "New Message",
-                    body: safeText ? sanitizeHtml(safeText, { allowedTags: [], allowedAttributes: {} }).slice(0, 50) : "📷 Photo Message"
+                    title: req.user.fullName || "New Message",
+                    body: safeText
+                        ? sanitizeHtml(safeText, { allowedTags: [], allowedAttributes: {} }).slice(0, 50)
+                        : "📷 New Message",
+                    data: { senderId: String(senderId) },
                 });
             }
         }
@@ -293,31 +301,27 @@ export const deleteMessage = async (req, res) => {
     }
 };
 
-// const FCM_SERVER_KEY = "ec0ba497febdd788b227b96eb1ce18eda1cb3639"
+export const sendPushNotification = async ({ token, title, body, data = {} }) => {
+    if (!messaging || !token) return; // push disabled or no token saved
 
-// export const sendPushNotification = async ({ token, title, body }) => {
-//     try {
-//         const response = await fetch("https://fcm.googleapis.com/fcm/send", {
-//             method: "POST",
-//             headers: {
-//                 "Authorization": `key=${FCM_SERVER_KEY}`,
-//                 "Content-Type": "application/json",
-//             },
-//             body: JSON.stringify({
-//                 to: token,
-//                 notification: {
-//                     title: title,
-//                     body: body,
-//                     sound: "default"
-//                 },
-//                 priority: "high"
-//             }),
-//         });
-
-//         const result = await response.json();
-//         console.log("FCM push response:", result);
-//         return result;
-//     } catch (error) {
-//         console.error("Push notification error:", error.message);
-//     }
-// };
+    try {
+        await messaging.send({
+            token,
+            notification: { title, body },
+            data,
+            webpush: {
+                notification: { icon: "/vite.svg" },
+                fcmOptions: { link: process.env.FRONTEND_URL || "/" },
+            },
+        });
+    } catch (error) {
+        console.error("Push notification error:", error.message);
+        // Drop tokens Firebase reports as dead so we don't keep retrying them.
+        if (
+            error.code === "messaging/registration-token-not-registered" ||
+            error.code === "messaging/invalid-registration-token"
+        ) {
+            await User.updateOne({ fcmToken: token }, { $set: { fcmToken: "" } });
+        }
+    }
+};

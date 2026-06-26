@@ -37,7 +37,7 @@ export const login = async (req, res) => {
         const { email, password } = req.body;
         const userData = await User.findOne({ email })
         if (!userData) {
-            return res.json({ success: false, message: "Gadhe ki ga#d register toh krle pehle ya email check kar" });
+            return res.json({ success: false, message: "Register first" });
         }
         const isPass = await bcrypt.compare(password, userData.password)
         if (!isPass) {
@@ -45,7 +45,7 @@ export const login = async (req, res) => {
         }
 
         const token = generateToken(userData._id)
-        return res.json({ success: true, userData, token, message: "Aa gya dalla baat krne" });
+        return res.json({ success: true, userData, token, message: "Aa gya firse baat krne k lie" });
 
     } catch (error) {
         console.log('error', error.message)
@@ -116,21 +116,17 @@ export const onlineVisibility = async (req, res) => {
     }
 }
 
-// export const saveFcmToken = async (req, res) => {
-//     try {
-//         const userId = req.user._id;
-//         const { fcmToken } = req.body;
+export const saveFcmToken = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { fcmToken } = req.body;
 
-//         if (!fcmToken) return res.status(400).json({ success: false, message: "FCM token is required" });
+        if (!fcmToken) return res.status(400).json({ success: false, message: "FCM token is required" });
 
-//         await User.findOneAndUpdate(
-//             { userId },
-//             { fcmToken },
-//             { new: true }
-//         );
-//         res.json({ success: true, message: "Token saved successfully" });
-//     } catch (err) {
-//         console.error("Save FCM token error:", err.message);
-//         res.status(500).json({ success: false, message: err.message });
-//     }
-// };
+        await User.findByIdAndUpdate(userId, { fcmToken });
+        res.json({ success: true, message: "Token saved successfully" });
+    } catch (err) {
+        console.error("Save FCM token error:", err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
