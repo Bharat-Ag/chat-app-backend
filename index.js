@@ -40,8 +40,8 @@ app.use(express.json({ limit: "4mb" }))
 const corsOptions = {
     origin: process.env.FRONTEND_URL,
     credentials: true, // Allow cookies or auth headers
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization", "token"],
+    // methods: ["GET", "POST", "PUT", "DELETE"],
+    // allowedHeaders: ["Content-Type", "Authorization", "token"],
 };
 
 app.use(cors(corsOptions));
